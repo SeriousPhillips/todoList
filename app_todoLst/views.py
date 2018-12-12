@@ -30,8 +30,6 @@ fieldInfo={ 'status':['waiting','in_progress','done'],
 
 
 
-
-
 pgSize_dflt=10
 
 
@@ -46,6 +44,24 @@ def sign_in(request):
 
 	return render(request, 'todoLst/sign_in_template.html')
 
+
+def sign_in_process(request):
+
+
+
+	#print('running here',request.POST['auth_action'])
+	request.session['lgn']=request.POST['lgn']
+	request.session['pwd']=request.POST['pwd']
+
+	
+
+	if request.POST['auth_action']=='sign up':
+		return HttpResponseRedirect( reverse('todoLst:sign_up'))
+	else:
+		
+		return HttpResponseRedirect( reverse('todoLst:tasks'))
+
+
 def log_out(request):
 	AuthState.clearSession(request.session)
 	return HttpResponseRedirect( reverse('todoLst:sign_in'))
@@ -55,28 +71,12 @@ def sign_up(request):
 
 	return render(request, 'todoLst/sign_up_template.html')
 
-def sign_in_process(request):
 
-
-
-	#print('running here',request.POST['auth_action'])
-	request.session['lgn']=request.POST['lgn']
-	request.session['pwd']=request.POST['pwd']
-	if 'signed' in request.session:
-		del(request.session['signed'])	
-	
-
-	if request.POST['auth_action']=='sign up':
-		return HttpResponseRedirect( reverse('todoLst:sign_up'))
-	else:
-		
-		return HttpResponseRedirect( reverse('todoLst:tasks'))
 def sign_up_process(request):
 	request.session['lgn']=request.POST['lgn']
 	request.session['pwd']=request.POST['pwd']	
-	request.session['pwd2']=request.POST['pwd2']
-	if 'signed' in request.session:
-		del(request.session['signed'])
+
+
 
 
 
@@ -95,7 +95,7 @@ def sign_up_process(request):
 	
 	User.objects.create_user(request.session['lgn'], '', request.session['pwd'])
 
-	request.session['signed']=True
+
 	return HttpResponseRedirect( reverse('todoLst:tasks'))
 
 
@@ -103,46 +103,12 @@ def sign_up_process(request):
 
 
 
-def tasks_old(request):
-	user = authenticate(username=request.session['lgn'], password=request.session['pwd'])
-	#print( request.POST)
-	if user is None:
-		if 'signed' in request.session:
-			del(request.session['signed'])
 
-		return HttpResponse('authentification problem!!!')
-	else:
-		request.session['signed']=True
-		return HttpResponse('now you can view your tasks, {}'.format(user.username) )
 def onAuthProblem():
 	return HttpResponseRedirect( reverse('todoLst:sign_in'))
 
 
 
-def removeTasks(pks,user):
-	if user.is_superuser:
-		Task.objects.filter( pk__in=pks ).delete()
-	else:
-		Task.objects.filter( pk__in=pks, user__username=user.username ).delete()	
-def updateTasks(taskDict,user):
-	def updateTask(task):
-		for field in allFields:
-			if field in taskDict[str(task.pk)]:
-			
-				task.__dict__[field]=taskDict[str(task.pk)][field]
-			task.save()
-	if user.is_superuser:
-		for task in Task.objects.filter( pk__in=list(taskDict) ):
-			updateTask(task)
-
-	else:
-		for task in user.task_set.filter( pk__in=list(taskDict) ):
-			updateTask(task)
-
-
-def addTask(taskSpecsDict,user):
-	if taskSpecsDict:
-		user.task_set.create(**taskSpecsDict )
 
 class AuthState:
 	def __init__(self,session):
@@ -162,10 +128,7 @@ class AuthState:
 def getOrAlt(obj,key,alt=None):
 
 	return (obj[key] if key in obj else alt)
-	if key in obj:
-		return obj[key]
-	else:
-		return None
+
 
 class TasksState:
 	"""
@@ -184,7 +147,7 @@ class TasksState:
         update_type - specifies what kind of change if any should be applied to stored task		
 	newTaskInfo - dictionary with all fields to create new task
 	selected_ids - list of seleted ids
-	taskUpdateDict - information how to update selected tasks
+	taskUpdateDict - information on how to update selected tasks
 	warning - list of warnings that contains description of problems encountered
 	(not all update configuration elements presented in every instance)		
 	
@@ -288,7 +251,7 @@ def tasks(request):
 		return onAuthProblem()
 
 	
-	user = authenticate(username=request.session['lgn'], password=request.session['pwd'])
+	user = authenticate(username=authState.lgn, password=authState.pwd)
 
 	if user is None:	
 		return onAuthProblem()
@@ -306,16 +269,7 @@ def tasks(request):
 
 			
 			
-		"""
-		if 'priority_filter' in request.POST:
-			fltrs['priority__in']=request.POST.getlist('priority_filter')
-		
-		if 'status_filter' in request.POST:
-			fltrs['status__in']=request.POST.getlist('status_filter') 
 
-
-		fltrs2={field: (fltrs[field+str('__in')] if field+str('__in') in fltrs else []) for field in fields}
-		"""
 		if user.is_superuser:
 			tasks=Task.objects.filter(**tasksState.getFilter()).order_by('-pk')
 		else:
@@ -336,49 +290,36 @@ def tasks(request):
 
 
 
-def chngTasks(request):
-	#print('HERE')
-	print('here', request.POST)
-	user = authenticate(username=request.session['lgn'], password=request.session['pwd'])
 
-	if user is None:
-		if 'signed' in request.session:
-			del(request.session['signed'])
-
-		return HttpResponse('authentification problem!!!')
-	else:
-		request.session['signed']=True
-		#print(request.POST,user.is_superuser)
-		#print( request.POST['to_del'])
-		
-		#ress=Task.objects.filter( pk__in=request.POST['to_del'])
-		#print ('n ress',len(request.POST.getlist('to_del')))
-		if request.POST['update_type']=='delete selected':
-			if user.is_superuser:
-				Task.objects.filter( pk__in=request.POST.getlist('to_del') ).delete()
-			else:
-				Task.objects.filter( pk__in=request.POST.getlist('to_del'), user__username=user.username ).delete()
-		elif request.POST['update_type']=='update selected':
-			print(request.POST.getlist('to_del'))
-			for task in Task.objects.filter( pk__in=request.POST.getlist('to_del') ):
-				print('updating task', task)
-				if  user.is_superuser or user.username==task.user.username:
-					print('updating task', task)
-					task.priority=int(request.POST[str(task.pk)+'priority'])
-					task.status=int(request.POST[str(task.pk)+'status']	)											
-					task.save()	
-		
-
-			
-		#print(request.POST)	
-		
-		return HttpResponseRedirect( reverse('todoLst:tasks'))
 
 
 
 	
 
+def removeTasks(pks,user):
+	if user.is_superuser:
+		Task.objects.filter( pk__in=pks ).delete()
+	else:
+		Task.objects.filter( pk__in=pks, user__username=user.username ).delete()	
+def updateTasks(taskDict,user):
+	def updateTask(task):
+		for field in allFields:
+			if field in taskDict[str(task.pk)]:
+			
+				task.__dict__[field]=taskDict[str(task.pk)][field]
+			task.save()
+	if user.is_superuser:
+		for task in Task.objects.filter( pk__in=list(taskDict) ):
+			updateTask(task)
 
+	else:
+		for task in user.task_set.filter( pk__in=list(taskDict) ):
+			updateTask(task)
+
+
+def addTask(taskSpecsDict,user):
+	if taskSpecsDict:
+		user.task_set.create(**taskSpecsDict )
 
 
 
