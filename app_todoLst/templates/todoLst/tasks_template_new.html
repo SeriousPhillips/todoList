@@ -1,0 +1,52 @@
+{%load my_filters%}
+
+<p> tasks available for user {{user.username}} </p>
+
+<form action="{% url 'todoLst:rmvTask' %}" method="post">
+{% csrf_token %}
+<ul>
+{% for task in tasks %}
+
+
+
+	
+    <li> <input type="checkbox" value="{{task.pk}}" name="to_del"> {{task.task_text }} -- {{ priorityList|loc:task.priority }} -- {{  statusList|loc:task.status }} </li>
+    
+
+
+
+
+{% endfor %}
+</ul>
+<input type="submit" value="delete selected">
+</form>
+
+<p> add more tasks </p>
+<form action="{% url 'todoLst:addTask' %}" method="post">
+{% csrf_token %}
+
+
+
+<p>Task Description:<input name='task_text' type="text" > </input><br></p>
+
+
+<p>Choose task priority:</p>
+<select size="3" name="priority">
+
+    {% for priority in priorityList %}
+    <option value=" {{ forloop.counter|add:'-1' }}">{{priority}}</option>
+    {% endfor %}
+  </select>
+
+
+<br>
+<p>Task status:</p>
+{% for status in statusList %}
+    <input type="radio" name="status" id="{{status}}" value="{{ forloop.counter|add:'-1' }}">
+    <label for="{{status }}">{{ status }}</label>
+{% endfor %}
+<br>
+<input type="submit" value="add task">
+
+</form>
+

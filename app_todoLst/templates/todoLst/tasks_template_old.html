@@ -1,0 +1,100 @@
+{%load my_filters%}
+
+
+<h3> Tasks available for user <i>{{user.username}}</i>: </h3>
+
+<form action="{% url 'todoLst:chngTasks' %}" method="post">
+{% csrf_token %}
+<ul>
+{% for task in tasks %}
+
+    <li> <input type="checkbox" value="{{task.pk}}" name="to_del"> 
+        {{task.task_text }} 
+	-- {% include "todoLst/selectList.html" with opnLst=priorityList opnStd=task.priority name='priority' pk=task.pk%} 
+	-- {% include "todoLst/selectList.html" with opnLst=statusList opnStd=task.status name='status' pk=task.pk%}  
+	{%if isAdmin%}-- {{task.user.username}} {%endif%}</li>     
+{% endfor %}
+</ul>
+<input type="submit" name='update_type' value="delete selected">
+<input type="submit" name='update_type' value="update selected">
+</form>
+
+#################################################
+<h3> Filtering: </h3>
+<form action="{% url 'todoLst:tasks' %}" method="post">
+{% csrf_token %}
+
+{%comment%}
+<p>Order by:</p>
+{% for field in fields  %}
+<input type="radio" name="sort_by_field" id="{{field}}" value="{{field}}">
+<label for="{{field}}">{{field}}</label>
+{%endfor%}
+
+<br>
+
+<p>Order:</p>
+{% for field in 'ascending descending'|split  %}
+
+
+<input type="radio" name="sort_order" id="{{field}}" value="{{field}}">
+<label for="{{field}}">{{field}}</label>
+
+
+
+{%endfor%}
+
+
+<br>
+{%endcomment%}
+<p>Task Priority:</p>
+{% for priority in priorityList %}
+
+
+    <input  type="checkbox" name="priority_filter" id="{{priority}}2" value="{{forloop.counter|add:'-1' }}"  {% if forloop.counter|add:'-1'|stringformat:'i' in  fltrs.priority%} checked {%endif%} >
+    <label for="{{priority }}2">{{ priority }}</label>
+{% endfor %}
+<br>
+<p>Task status:</p>
+{% for status in statusList %}
+    <input type="checkbox" name="status_filter" id="{{status}}2" value="{{ forloop.counter|add:'-1' }}" {% if forloop.counter|add:'-1'|stringformat:'i' in  fltrs.status%} checked {%endif%}>
+    <label for="{{status }}2">{{ status }}</label>
+{% endfor %}
+<br>
+
+
+
+<input type="submit" value="apply filters">
+</form>
+
+#################################################
+<h3> Task creation form: </h3>
+<form action="{% url 'todoLst:addTask' %}" method="post">
+{% csrf_token %}
+
+
+
+<p>Task Description:</p>
+<textarea name='task_text' rows=5 cols=40></textarea><br>
+<p>Task Priority:</p>
+{% for priority in priorityList %}
+    <input type="radio" name="priority" id="{{priority}}" value="{{forloop.counter|add:'-1' }}">
+    <label for="{{priority }}">{{ priority }}</label>
+{% endfor %}
+<br>
+<p>Task status:</p>
+{% for status in statusList %}
+    <input type="radio" name="status" id="{{status}}" value="{{ forloop.counter|add:'-1' }}">
+    <label for="{{status }}">{{ status }}</label>
+{% endfor %}
+<br>
+<input type="submit" value="add task">
+
+</form>
+###################################################
+
+<form action="{% url 'todoLst:log_out' %}">
+
+<input type="submit" value="log out"> </input>
+
+</form>

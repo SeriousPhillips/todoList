@@ -1,0 +1,159 @@
+{%load my_filters%}
+
+
+
+{% if warnings %}
+************warning************
+<br>
+{% for warning in warnings %}
+{{warning}}
+<br>
+{%endfor%}
+
+*******************************
+{% endif %}
+
+<script>
+function highlightChanges(el){
+ if (el.value!=el.getAttribute('data-value0')) {el.style.color='red'} else {el.style.color=''} 
+ }
+
+function inpOn(el){
+
+
+
+	var newEl = document.createElement('textarea');
+
+	//newEl.type = 'text';
+
+        newEl.name = 'task_text__'+el.id;
+
+	newEl.innerHTML = el.innerHTML;
+
+
+	el.parentNode.replaceChild(newEl, el);
+
+}
+
+function inpOff(el){
+ if (el.value!=el.getAttribute('data-value0')) {el.style.color='red'} else {el.style.color=''} 
+ }
+
+</script>
+
+<form action="{% url 'todoLst:tasks' %}" method="post">
+{% csrf_token %}
+{% if tasks %}
+<h3> Tasks available for <i>{{user.username}}</i>: </h3>
+
+
+
+
+<p>Pages: 
+{% for page in pages %}
+<label onclick="document.getElementById('goto_input').value='{{page}}'" for="goto_btn"  > 
+{%if page == pgN %}
+<strong>{{page}} </strong>
+{% else %}
+{{page}}
+{% endif %}
+
+</label>; 
+
+{%endfor%}
+<input id="goto_btn" type="submit" name='update_type' value="go to"> <input id="goto_input" type="number" style="width:80" name="pgN" />
+<br>
+<input type="submit" name="update_type" value="Set page size to"> <input type="number" style="width:80" name="pgSize" />
+</p> 
+
+
+<table>
+<tr><th></th>
+<th>Task Description</th>
+<th>Priority</th>
+<th>Status</th>
+{%if isAdmin%}<th> Owner</th> {%endif%}</tr> 
+
+{% for task in tasks %}
+
+    <tr><td><input type="checkbox" value="{{task.pk}}" name="selected_ids"> </td>
+        <td><p id="{{task.id}}" ondblclick="inpOn(this)">{{task.task_text }} </p></td>
+	
+	{%for field in fields  %}
+	<td> {% include "todoLst/selectList.html" with opnLst=fieldInfo|loc:field opnStd=task|getAttr:field name=field pk=task.pk|stringformat:'i' %} </td>
+	{%endfor%}
+
+	{%if isAdmin%}<td> {{task.user.username}}</td> {%endif%}</tr>     
+{% endfor %}
+</table>
+
+
+<br>
+<input type="submit" name='update_type' value="delete selected">
+<input type="submit" name='update_type' value="update selected">
+{%else%}
+<h3> No tasks are available for <i>{{user.username}}</i> that match current filter: </h3>
+{%endif%}
+
+<br>
+#################################################
+<h3> Filtering: </h3>
+
+{% csrf_token %}
+
+
+{% for field in fields %}
+<p>Task {{field}}:</p>
+{% for option in  fieldInfo|loc:field %}
+
+    <input  type="checkbox" name="{{field|add:'__filter'}}" id="{{option|add:'__filter'}}" value="{{forloop.counter|add:'-1' }}"  {% if forloop.counter|add:'-1'|stringformat:'i' in  filterConf|loc:field%} checked {%endif%} >
+    <label for="{{field|add:'__filter'}}">{{ option }}</label>
+{% endfor %}
+<br>
+
+{%endfor%}
+
+
+
+<input type="submit" name="update_type" value="apply filters">
+
+<br>
+#################################################
+<h3> Task creation form: </h3>
+
+{% csrf_token %}
+
+
+
+<p>Task Description:</p>
+<textarea name='task_text__new' rows=5 cols=40></textarea><br>
+
+
+{%for field in fields%}
+<p>Task {{field}}:</p>
+{% for option in fieldInfo|loc:field %}
+    <input type="radio" name="{{field|add:'__new'}}" id="{{option|add:'__new'}}" value="{{forloop.counter|add:'-1' }}">
+    <label for="{{option|add:'__new'}}">{{option}}</label>
+{% endfor %}
+<br>
+{%endfor%}
+
+<input type="submit" value="add task" name="update_type">
+
+</form>
+<br>
+#################################################
+
+<form action="{% url 'todoLst:log_out' %}">
+
+<input type="submit" value="log out"> </input>
+
+</form>
+<br>
+#################################################
+<p id='demo' />
+
+
+
+
+

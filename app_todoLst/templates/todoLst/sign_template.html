@@ -1,0 +1,12 @@
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{% url 'todoLst:addUser' %}" method="post">
+{% csrf_token %}
+
+Login:<input name='lgn' type="text" > </input><br>
+Password:<input name='pwd' type="password"><br>
+Repeat Password:<input name='pwd2' type="password"><br>
+<input type="submit" value="sign up">
+</form>
+

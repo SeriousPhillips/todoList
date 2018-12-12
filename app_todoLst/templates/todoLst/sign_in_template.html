@@ -1,0 +1,10 @@
+
+
+<form action="{% url 'todoLst:sign_in_process' %}" method="post">
+{% csrf_token %}
+
+Login:<input name='lgn' type="text" > </input><br>
+Password:<input name='pwd' type="password"><br>
+<input type="submit" name='auth_action' value="sign in"><input type="submit" name='auth_action' value="sign up">
+</form>
+

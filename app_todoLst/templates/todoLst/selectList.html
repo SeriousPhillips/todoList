@@ -1,0 +1,10 @@
+{%load my_filters%}
+
+<select onchange="highlightChanges(this)" name="{{ name|add:'__'|add:pk }}" data-value0="{{opnStd}}">	
+    {% for opn in opnLst %}
+    <option {%if opnStd == forloop.counter|add:'-1' %} selected {%endif%} value= "{{ forloop.counter|add:'-1' }}"  >{{opn}}</option>
+    {% endfor %}
+</select>
+
+
+
